@@ -1,4 +1,7 @@
 #!/usr/bin/python
+
+from Crypto.Cipher import AES
+
 import base64
 import binascii
 import collections
@@ -171,6 +174,42 @@ def zip_list(lst):
 		finalList.append("".join(x for x in i).encode("hex"))
 	return finalList
 
+#################################################
+##                    AES                      ##
+#################################################
+
+class AESCipher_ECB:
+	def __init__(self,key):
+		self.key = key
+		self.BLOCK_SIZE = 16
+
+	def __pad(self,hexData):
+
+		raw = binascii.unhexlify(hexData)
+
+		if (len(raw) % self.BLOCK_SIZE == 0):
+			return hexData
+		else:
+			padding_required = self.BLOCK_SIZE - (len(raw) % self.BLOCK_SIZE)
+			padChar = "\x00"
+			data = raw.encode('utf-8') + padding_required * padChar
+			return data
+
+	def __unpad(self, s):
+		s = s.rstrip("\x00")
+		return s
+
+	def encrypt(self, hexData):
+		raw = self.__pad(hexData)
+		cipher = AES.AESCipher(self.key[:32], AES.MODE_ECB)
+		ciphertext = cipher.encrypt(raw)
+		return binascii.hexlify(bytearray(ciphertext)).decode("utf-8")
+
+	def decrypt(self, hexData):
+		raw = binascii.unhexlify(hexData)
+		cipher = AES.AESCipher(self.key[:32], AES.MODE_ECB)
+		raw = self.__unpad(cipher.decrypt(raw))
+		return binascii.hexlify(raw.decode("utf-8"))
 
 ###############################################################################
 # set 1 challenge 1:
@@ -216,3 +255,10 @@ def zip_list(lst):
 # print "Key: '%s'"%(finalKey)
 # print "="*(len(finalKey)+7)
 # print xor_hex_repeatingKey(data,finalKeyHex).decode("hex")
+
+###############################################################################
+# set 1 challenge 7:
+# data = open("1-7.txt").read()
+# data = binascii.hexlify(base64.b64decode(data))
+# c = AESCipher_ECB("YELLOW SUBMARINE")
+# print binascii.unhexlify(c.decrypt(data))
